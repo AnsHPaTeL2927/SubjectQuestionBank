@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 const Exam = require("../../models/examModel")
 const Subject = require("../../models/subjectModel")
-const ExamSubjects = require("../../models/examSubjectMappingModel");
+const ExamSubjectMapping = require("../../models/examSubjectMappingModel");
 
 //default and testing route
 const subjectController = async (req, res) => {
@@ -14,7 +14,7 @@ const addSubject = async (req, res) => {
     try {
         const { examId } = req.params
 
-        const subjects = req.body.subjects
+        const subjects = req.body
 
         if (!examId || !Array.isArray(subjects) || subjects.length === 0) {
             return res.status(422).json({
@@ -82,12 +82,13 @@ const examSubjectsLink = async (req, res) => {
     session.startTransaction();
 
     try {
-        const { examId } = req.params
-        const subjectId = req.body.subject_id
+        const { examId } = req.params;
+        const linkedSubjectIds = req.body.linked_subject_ids;
+        const unlinkedSubjectIds = req.body.unlinked_subject_ids;
 
-        const exam = await Exam.findById(examId)
-
-        if (!exam || exam.length === 0) {
+        // Check if the exam exists
+        const examExists = await Exam.findById(examId);
+        if (!examExists) {
             await session.abortTransaction();
             session.endSession();
             return res.status(404).json({
@@ -96,50 +97,57 @@ const examSubjectsLink = async (req, res) => {
             });
         }
 
-        const subject = await Subject.findById(subjectId)
-
-        if (!subject || subject.length === 0) {
-            await session.abortTransaction();
-            session.endSession();
-            return res.status(404).json({
-                success: false,
-                message: 'Subject not found',
+        // Link subjects
+        for (const subjectId of linkedSubjectIds) {
+            const existingLink = await ExamSubjectMapping.findOne({
+                exam_id: examId,
+                subject_id: subjectId
             });
+
+            if (!existingLink) {
+                // Create new mapping if it doesn't exist
+                const newLink = new ExamSubjectMapping({
+                    exam_id: examId,
+                    subject_id: subjectId,
+                    is_active: true,
+                });
+                await newLink.save({ session });
+            } else if (!existingLink.is_active) {
+                // Activate link if it exists but is not active
+                existingLink.is_active = true;
+                existingLink.deletedAt = false;
+                await existingLink.save({ session });
+            }
         }
 
-        const existingLink = await ExamSubjects.findOne({
-            examId: examId,
-            subjectId: subjectId,
-        });
-
-        if (existingLink) {
-            await session.abortTransaction();
-            session.endSession();
-            return res.status(422).json({
-                success: false,
-                message: `Subject is already linked to this exam.`,
+        // Unlink subjects
+        for (const subjectId of unlinkedSubjectIds) {
+            const existingLink = await ExamSubjectMapping.findOne({
+                exam_id: examId,
+                subject_id: subjectId
             });
+
+            if (existingLink && existingLink.is_active) {
+                // Soft delete the link by setting `is_active` to false
+                existingLink.is_active = false;
+                existingLink.deletedAt = true;
+                await existingLink.save({ session });
+            }
         }
 
-        const newLink = new ExamSubjects({
-            exam_id: examId,
-            subject_id: subjectId,
-        });
-        await newLink.save({ session });
-
+        // Commit transaction
         await session.commitTransaction();
         session.endSession();
 
         return res.status(200).json({
             success: true,
-            message: 'Subject successfully linked to exam',
-            response: newLink,
+            message: 'Subjects successfully linked/unlinked to exam',
         });
 
     } catch (error) {
         await session.abortTransaction();
         session.endSession();
-        console.log(`Error from linkSubjectToExam controller: ${error}`);
+        console.error(`Error in examSubjectsLink controller: ${error}`);
         return res.status(500).json({
             success: false,
             message: 'Internal server error',
