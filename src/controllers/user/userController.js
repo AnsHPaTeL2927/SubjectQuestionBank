@@ -1,5 +1,6 @@
 const Exam = require('../../models/examModel')
 const sendResponse = require('../../utils/responseHandler')
+const ExamSubjectMapping = require("../../models/examSubjectMappingModel")
 const allExams = async (req, res) => {
     try {
         const exams = await Exam.where('hidden').equals(false).find();
@@ -35,6 +36,7 @@ const allSubjects = async (req, res) => {
 
         // Extract the subjects from the populated `subject_id` field
         const linkedSubjects = subjectMappings.map(mapping => mapping.subject_id);
+        console.log(linkedSubjects)
 
         return res.status(200).json({
             success: true,
