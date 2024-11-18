@@ -7,6 +7,8 @@ router.route("/:examId/subjects/:subjectId/add-topics").post(authenticate, topic
 
 router.route("/:examId/subjects/:subjectId/topics").post(authenticate, topicController.subjectTopicsLink)
 
+router.route("/:examId/subjects/:subjectId/topics/:topicId").put(authenticate, topicController.editTopic)
+
 
 
 module.exports = router

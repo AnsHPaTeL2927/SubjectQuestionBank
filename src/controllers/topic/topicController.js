@@ -145,4 +145,49 @@ const subjectTopicsLink = async (req, res) => {
     }
 }
 
-module.exports = { addTopic, subjectTopicsLink }
+const editTopic = async (req, res) => {
+    const session = await mongoose.startSession();
+    session.startTransaction();
+    try {
+        const { topicId } = req.params
+        const updateTopicFields = req.body
+
+        const topic = await Topic.findById(topicId);
+        if (!topic) {
+            await session.abortTransaction();
+            session.endSession();
+            return res.status(404).json({
+                success: false,
+                message: 'Topic not found',
+            });
+        }
+
+        for (const key in updateTopicFields) {
+            if (updateTopicFields.hasOwnProperty(key) && key !== '_id') {
+                topic[key] = updateTopicFields[key];
+            }
+        }
+
+        const updatedTopic = await topic.save({ session });
+
+        // Commit the transaction
+        await session.commitTransaction();
+        session.endSession();
+
+        return res.status(200).json({
+            success: true,
+            message: 'Topic updated successfully',
+            data: updatedTopic,
+        });
+    } catch (error) {
+        await session.abortTransaction();
+        session.endSession();
+        console.log(`Error from editTopic controller: ${error}`);
+        return res.status(500).json({
+            success: false,
+            message: 'Internal server error',
+        });
+    }
+}
+
+module.exports = { addTopic, subjectTopicsLink, editTopic }

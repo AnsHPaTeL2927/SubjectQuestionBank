@@ -220,7 +220,6 @@ const editSubject = async (req, res) => {
         }
 
         for (const key in updateSubjectFields) {
-            console.log(updateSubjectFields.hasOwnProperty(key))
             if (updateSubjectFields.hasOwnProperty(key) && key !== '_id') {
                 subject[key] = updateSubjectFields[key];
             }
