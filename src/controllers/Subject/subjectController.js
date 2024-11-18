@@ -101,7 +101,8 @@ const examSubjectsLink = async (req, res) => {
         for (const subjectId of linkedSubjectIds) {
             const existingLink = await ExamSubjectMapping.findOne({
                 exam_id: examId,
-                subject_id: subjectId
+                subject_id: subjectId,
+                deletedAt: false
             });
 
             if (!existingLink) {
@@ -115,7 +116,6 @@ const examSubjectsLink = async (req, res) => {
             } else if (!existingLink.is_active) {
                 // Activate link if it exists but is not active
                 existingLink.is_active = true;
-                existingLink.deletedAt = false;
                 await existingLink.save({ session });
             }
         }
