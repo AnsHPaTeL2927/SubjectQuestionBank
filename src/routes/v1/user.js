@@ -10,4 +10,6 @@ router.route("/exams/:examId/subjects/:subjectId/topics").get(userController.fet
 
 router.route("/exams/:examId/subjects/:subjectId/topics/:topicId/questions").get(userController.fetchQuestionsByTopicId)
 
+router.route("/exams/:examId").get(userController.getExamDetails)
+
 module.exports = router;

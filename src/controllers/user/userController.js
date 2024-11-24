@@ -189,4 +189,82 @@ const fetchQuestionsByTopicId = async (req, res) => {
     }
 };
 
-module.exports = { allExams, fetchLinkedSubjectsByExamId, fetchLinkedTopicsBySubjectId, fetchQuestionsByTopicId }
+const getExamDetails = async (req, res) => {
+    try {
+        const { examId } = req.params;
+
+        // Step 1: Validate if examId is provided
+        if (!examId) {
+            return res.status(400).json({
+                success: false,
+                message: "Exam ID is required",
+            });
+        }
+
+        // Step 2: Fetch exam details
+        const exam = await Exam.findById(examId);
+        if (!exam) {
+            return res.status(404).json({
+                success: false,
+                message: "Exam not found",
+            });
+        }
+
+        // Step 3: Fetch linked subjects
+        const subjectLinks = await ExamSubjectMapping.find({
+            exam_id: examId,
+            is_active: true,
+            deletedAt: false,
+        });
+
+        const subjectIds = subjectLinks.map((link) => link.subject_id);
+
+        const subjects = await Subject.find({
+            _id: { $in: subjectIds },
+            hidden: false,
+            deletedAt: false,
+        });
+
+        // Step 4: Fetch topics for each subject
+        const subjectWithTopics = await Promise.all(
+            subjects.map(async (subject) => {
+                const topicLinks = await SubjectTopicMapping.find({
+                    subject_id: subject._id,
+                    is_active: true,
+                    deletedAt: false,
+                });
+
+                const topicIds = topicLinks.map((link) => link.topic_id);
+
+                const topics = await Topic.find({
+                    _id: { $in: topicIds },
+                    hidden: false,
+                    deletedAt: false,
+                });
+
+                return {
+                    subject,
+                    topics,
+                };
+            })
+        );
+
+        // Step 5: Return response
+        return res.status(200).json({
+            success: true,
+            message: "Exam details fetched successfully",
+            data: {
+                exam,
+                subjects: subjectWithTopics,
+            },
+        });
+    } catch (error) {
+        console.error(`Error in getExamDetails controller: ${error}`);
+        return res.status(500).json({
+            success: false,
+            message: "Internal server error",
+        });
+    }
+};
+
+module.exports = { allExams, fetchLinkedSubjectsByExamId, fetchLinkedTopicsBySubjectId, fetchQuestionsByTopicId, getExamDetails }
