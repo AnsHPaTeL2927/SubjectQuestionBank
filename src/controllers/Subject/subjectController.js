@@ -56,6 +56,13 @@ const addSubject = async (req, res) => {
             })
             await newSubject.save({ session });
 
+            const newLink = new ExamSubjectMapping({
+                exam_id: examId,
+                subject_id: newSubject._id,
+                is_active: true,
+            });
+            await newLink.save({ session });
+
             addSubjects.push(newSubject)
         }
         await session.commitTransaction();
