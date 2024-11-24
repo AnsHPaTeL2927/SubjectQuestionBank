@@ -190,4 +190,112 @@ const editTopic = async (req, res) => {
     }
 }
 
-module.exports = { addTopic, subjectTopicsLink, editTopic }
+const deleteTopic = async (req, res) => {
+    const { topicId } = req.params;
+
+    const session = await mongoose.startSession();
+    session.startTransaction();
+    try {
+        const topic = await Topic.findById(topicId);
+
+        if (!topic) {
+            await session.abortTransaction();
+            session.endSession();
+            return res.status(404).json({
+                success: false,
+                message: 'Topic not found',
+            });
+        }
+
+        if (topic.deletedAt) {
+            await session.abortTransaction();
+            session.endSession();
+            return res.status(400).json({
+                success: false,
+                message: 'Topic is already deleted',
+            });
+        }
+
+        // Soft delete the topic
+        topic.deletedAt = true;
+        await topic.save({ session });
+
+        // Soft delete all links between this topic and its subjects
+        await TopicSubjectMapping.updateMany(
+            { topic_id: topicId, deletedAt: false },
+            { deletedAt: true },
+            { session }
+        );
+
+        await session.commitTransaction();
+        session.endSession();
+
+        return res.status(200).json({
+            success: true,
+            message: 'Topic and associated links successfully deleted',
+        });
+    } catch (error) {
+        await session.abortTransaction();
+        session.endSession();
+        console.error(`Error in deleteTopic controller: ${error}`);
+        return res.status(500).json({
+            success: false,
+            message: 'Internal server error',
+        });
+    }
+}
+
+const allTopics = async (req, res) => {
+    try {
+        const { examId, subjectId } = req.params
+
+        if (!examId || !subjectId) {
+            return res.status(422).json({
+                success: false,
+                message: 'Exam ID or Subject ID is required',
+            });
+        }
+
+        const exam = await Exam.findById(examId);
+        if (!exam) {
+            return res.status(404).json({
+                success: false,
+                message: 'Exam not found',
+            });
+        }
+        
+        const subject = await Subject.findById(subjectId);
+        if (!subject) {
+            return res.status(404).json({
+                success: false,
+                message: 'Subject not found',
+            });
+        }
+
+        const subjectTopicLinks = await SubjectTopicMapping.find({ subject_id: subjectId });
+
+        if (subjectTopicLinks.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: 'No topics are linked to this subject',
+            });
+        }
+
+        const topicIds = subjectTopicLinks.map(link => link.topic_id);
+
+        const topics = await Topic.where('_id').in(topicIds).where('deletedAt').equals(false);
+
+        return res.status(200).json({
+            success: true,
+            message: "Topics are fetched",
+            response: topics
+        })
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            message: "Server Error"
+        })
+    }
+}
+
+module.exports = { addTopic, subjectTopicsLink, editTopic, deleteTopic, allTopics }

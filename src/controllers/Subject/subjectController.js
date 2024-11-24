@@ -174,7 +174,7 @@ const allSubject = async (req, res) => {
             });
         }
 
-        const examSubjectLinks = await ExamSubjects.find({ exam_id: examId });
+        const examSubjectLinks = await ExamSubjectMapping.find({ exam_id: examId });
 
         if (examSubjectLinks.length === 0) {
             return res.status(404).json({

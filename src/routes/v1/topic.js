@@ -9,6 +9,8 @@ router.route("/:examId/subjects/:subjectId/topics").post(authenticate, topicCont
 
 router.route("/:examId/subjects/:subjectId/topics/:topicId").put(authenticate, topicController.editTopic)
 
+router.route("/:examId/subjects/:subjectId/topics/:topicId").delete(authenticate, topicController.deleteTopic)
 
+router.route("/:examId/subjects/:subjectId/topics").get(authenticate, topicController.allTopics)
 
 module.exports = router
