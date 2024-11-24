@@ -7,7 +7,7 @@ router.route("/:examId/subjects/:subjectId/topics/:topicId/add-question").post(a
 
 // router.route("/:examId/subjects/:subjectId/topics").post(authenticate, topicController.subjectTopicsLink)
 
-// router.route("/:examId/subjects/:subjectId/topics/:topicId").put(authenticate, topicController.editTopic)
+router.route("/:examId/subjects/:subjectId/topics/:topicId/questions/:questionId").put(authenticate, questionController.editQuestion)
 
 // router.route("/:examId/subjects/:subjectId/topics/:topicId").delete(authenticate, topicController.deleteTopic)
 

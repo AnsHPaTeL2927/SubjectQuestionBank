@@ -77,7 +77,48 @@ const addQuestion = async (req, res) => {
 };
 
 const editQuestion = async(req, res) => {
-    
+    const session = await mongoose.startSession();
+    session.startTransaction();
+    try {
+        const { questionId } = req.params
+        const updatedQuestionField = req.body
+
+        const question = await Question.findById(questionId)
+        if (!question) {
+            await session.abortTransaction();
+            session.endSession();
+            return res.status(404).json({
+                success: false,
+                message: 'Question not found',
+            });
+        }
+
+        for (const key in updatedQuestionField) {
+            if (updatedQuestionField.hasOwnProperty(key) && key !== '_id') {
+                question[key] = updatedQuestionField[key];
+            }
+        }
+
+        const updatedQuestion = await question.save({ session });
+
+        // Commit the transaction
+        await session.commitTransaction();
+        session.endSession();
+
+        return res.status(200).json({
+            success: true,
+            message: 'Question updated successfully',
+            data: updatedQuestion,
+        })
+    } catch (error) {
+        await session.abortTransaction();
+        session.endSession();
+        console.log(`Error from editQuestion controller: ${error}`);
+        return res.status(500).json({
+            success: false,
+            message: 'Internal server error',
+        });
+    }
 }
 
-module.exports = { addQuestion };
+module.exports = { addQuestion, editQuestion };
