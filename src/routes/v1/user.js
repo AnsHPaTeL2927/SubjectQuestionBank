@@ -8,4 +8,6 @@ router.route("/exams/:examId/subjects").get(userController.fetchLinkedSubjectsBy
 
 router.route("/exams/:examId/subjects/:subjectId/topics").get(userController.fetchLinkedTopicsBySubjectId)
 
+router.route("/exams/:examId/subjects/:subjectId/topics/:topicId/questions").get(userController.fetchQuestionsByTopicId)
+
 module.exports = router;

@@ -4,6 +4,7 @@ const ExamSubjectMapping = require("../../models/examSubjectMappingModel")
 const Topic = require("../../models/topicModel")
 const SubjectTopicMapping = require("../../models/subjectTopicMappingModel")
 const Subject = require("../../models/subjectModel")
+const Question = require("../../models/questionModel")
 const allExams = async (req, res) => {
     try {
         const exams = await Exam.where('hidden').equals(false).find();
@@ -135,4 +136,57 @@ const fetchLinkedTopicsBySubjectId = async (req, res) => {
     }
 };
 
-module.exports = { allExams, fetchLinkedSubjectsByExamId, fetchLinkedTopicsBySubjectId }
+const fetchQuestionsByTopicId = async (req, res) => {
+    try {
+        const { examId, subjectId, topicId } = req.params; // Assuming they are passed as query parameters
+
+        // Step 1: Validate required parameters
+        if (!examId || !subjectId || !topicId) {
+            return res.status(400).json({
+                success: false,
+                message: !examId ? "examId is requied" : !subjectId ? "subjectId is required" : "topicId is required",
+            });
+        }
+
+        // Step 2: Validate if examId exists
+        const exam = await Exam.findById(examId);
+        const subject = await Subject.findById(subjectId);
+        const topic = await Topic.findById(topicId);
+
+        if (!exam || !subject || !topic) {
+            return res.status(400).json({
+                success: false,
+                message: !exam ? "Exam not found" : !subject ? "Subject not found" : "Topic not found"
+            });
+        }
+
+        // Step 5: Fetch questions linked to the given topicId
+        const questions = await Question.find({
+            topic_id: topicId, // Assuming `topic_id` is stored in the `questions` collection
+            hidden: false,
+            deletedAt: false,
+        });
+
+        if (!questions || questions.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: "No questions found for the given topic",
+            });
+        }
+
+        // Step 6: Return the fetched questions
+        return res.status(200).json({
+            success: true,
+            message: "Questions fetched successfully",
+            data: questions,
+        });
+    } catch (error) {
+        console.error(`Error in fetchQuestionsByTopicId controller: ${error}`);
+        return res.status(500).json({
+            success: false,
+            message: "Internal server error",
+        });
+    }
+};
+
+module.exports = { allExams, fetchLinkedSubjectsByExamId, fetchLinkedTopicsBySubjectId, fetchQuestionsByTopicId }
