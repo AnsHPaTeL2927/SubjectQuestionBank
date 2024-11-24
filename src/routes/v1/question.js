@@ -11,6 +11,6 @@ router.route("/:examId/subjects/:subjectId/topics/:topicId/questions/:questionId
 
 router.route("/:examId/subjects/:subjectId/topics/:topicId/questions/:questionId").delete(authenticate, questionController.deleteQuestion)
 
-// router.route("/:examId/subjects/:subjectId/topics").get(authenticate, topicController.allTopics)
+router.route("/:examId/subjects/:subjectId/topics/:topicId/questions").get(authenticate, questionController.allQuestions)
 
 module.exports = router

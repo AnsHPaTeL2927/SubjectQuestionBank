@@ -169,4 +169,48 @@ const deleteQuestion = async(req, res) => {
     }
 }
 
-module.exports = { addQuestion, editQuestion, deleteQuestion };
+const allQuestions = async(req, res) => {
+    const session = await mongoose.startSession();
+    session.startTransaction();
+    try {
+        const { examId, subjectId, topicId } = req.params
+
+        const exam = await Exam.findById(examId);
+        const subject = await Subject.findById(subjectId);
+        const topic = await Topic.findById(topicId);
+
+        if (!exam || !subject || !topic) {
+            await session.abortTransaction();
+            session.endSession();
+            return res.status(404).json({
+                success: false,
+                message: !exam ? "Exam not found" : !subject ? "Subject not found" : "Topic not found"
+            });
+        }
+
+        const questions = await Question.find({ topic_id: topicId, deletedAt: false });
+
+        if (!questions || questions.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: 'No questions found for this topic',
+            });
+        }
+
+        return res.status(200).json({
+            success: true,
+            message: 'Questions fetched successfully',
+            data: questions,
+        });
+    } catch (error) {
+        await session.abortTransaction();
+        session.endSession();
+        console.error(`Error in deleteTopic controller: ${error}`);
+        return res.status(500).json({
+            success: false,
+            message: 'Internal server error',
+        });
+    }
+}
+
+module.exports = { addQuestion, editQuestion, deleteQuestion, allQuestions };
