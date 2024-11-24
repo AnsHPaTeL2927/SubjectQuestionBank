@@ -54,8 +54,8 @@ const addTopic = async(req, res) => {
 
         return res.status(200).json({
             success: true,
-            message: "Subject is created successfully",
-            response: addSubjects
+            message: "Topic is created successfully",
+            response: addTopic
         })        
     } catch (error) {
         await session.abortTransaction();
