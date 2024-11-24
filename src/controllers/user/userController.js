@@ -1,6 +1,9 @@
 const Exam = require('../../models/examModel')
 const sendResponse = require('../../utils/responseHandler')
 const ExamSubjectMapping = require("../../models/examSubjectMappingModel")
+const Topic = require("../../models/topicModel")
+const SubjectTopicMapping = require("../../models/subjectTopicMappingModel")
+const Subject = require("../../models/subjectModel")
 const allExams = async (req, res) => {
     try {
         const exams = await Exam.where('hidden').equals(false).find();
@@ -15,35 +18,57 @@ const allExams = async (req, res) => {
     }
 }
 
-const allSubjects = async (req, res) => {
-    const { examId } = req.params;
-
+const fetchLinkedSubjectsByExamId = async (req, res) => {
     try {
-        // Find all subject mappings for the given examId where is_active is true and deletedAt is false
-        const subjectMappings = await ExamSubjectMapping.find({
-            exam_id: examId,
-            is_active: true,
-            deletedAt: false,
-        }).populate('subject_id'); // Populate the subject details
+        const { examId } = req.params;
 
-        // If no subjects are found, return a 404 response
-        if (!subjectMappings || subjectMappings.length === 0) {
-            return res.status(404).json({
+        // Validate examId
+        if (!examId) {
+            return res.status(400).json({
                 success: false,
-                message: 'No linked subjects found for this exam',
+                message: 'Exam ID is required',
             });
         }
 
-        // Extract the subjects from the populated `subject_id` field
-        const linkedSubjects = subjectMappings.map(mapping => mapping.subject_id);
-        console.log(linkedSubjects)
+        // Step 1: Find active links between the exam and subjects
+        const activeLinks = await ExamSubjectMapping.find({
+            exam_id: examId,
+            is_active: true,
+            deletedAt: false,
+        });
 
+        if (!activeLinks || activeLinks.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: 'No subjects linked to the given exam',
+            });
+        }
+
+        // Extract subject IDs from the active links
+        const subjectIds = activeLinks.map(link => link.subject_id);
+
+        // Step 2: Fetch subjects based on the extracted IDs
+        const subjects = await Subject.find({
+            _id: { $in: subjectIds },
+            hidden: false,
+            deletedAt: false,
+        });
+
+        if (!subjects || subjects.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: 'No subjects found for the given exam',
+            });
+        }
+
+        // Return the filtered subjects
         return res.status(200).json({
             success: true,
-            subjects: linkedSubjects,
+            message: 'Subjects fetched successfully',
+            data: subjects,
         });
     } catch (error) {
-        console.error(`Error fetching linked subjects: ${error}`);
+        console.error(`Error in fetchLinkedSubjectsByExamId controller: ${error}`);
         return res.status(500).json({
             success: false,
             message: 'Internal server error',
@@ -51,4 +76,63 @@ const allSubjects = async (req, res) => {
     }
 };
 
-module.exports = { allExams, allSubjects }
+const fetchLinkedTopicsBySubjectId = async (req, res) => {
+    try {
+        const { subjectId } = req.params;
+
+        // Validate subjectId
+        if (!subjectId) {
+            return res.status(400).json({
+                success: false,
+                message: 'Subject ID is required',
+            });
+        }
+
+        // Step 1: Find active links between the subject and topics
+        const activeLinks = await SubjectTopicMapping.find({
+            subject_id: subjectId,
+            is_active: true,
+            deletedAt: false,
+        });
+
+
+        if (!activeLinks || activeLinks.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: 'No topics linked to the given subject',
+            });
+        }
+
+        // Extract topic IDs from the active links
+        const topicIds = activeLinks.map(link => link.topic_id);
+
+        // Step 2: Fetch topics based on the extracted IDs
+        const topics = await Topic.find({
+            _id: { $in: topicIds },
+            hidden: false,
+            deletedAt: false,
+        });
+
+        if (!topics || topics.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: 'No visible topics found for the given subject',
+            });
+        }
+
+        // Return the filtered topics
+        return res.status(200).json({
+            success: true,
+            message: 'Topics fetched successfully',
+            data: topics,
+        });
+    } catch (error) {
+        console.error(`Error in allTopics controller: ${error}`);
+        return res.status(500).json({
+            success: false,
+            message: 'Internal server error',
+        });
+    }
+};
+
+module.exports = { allExams, fetchLinkedSubjectsByExamId, fetchLinkedTopicsBySubjectId }
