@@ -121,4 +121,52 @@ const editQuestion = async(req, res) => {
     }
 }
 
-module.exports = { addQuestion, editQuestion };
+const deleteQuestion = async(req, res) => {
+    const session = await mongoose.startSession();
+    session.startTransaction();
+
+    const { questionId } = req.params
+    
+    try {
+        const question = await Question.findById(questionId)
+
+        if (!question) {
+            await session.abortTransaction();
+            session.endSession();
+            return res.status(404).json({
+                success: false,
+                message: 'Question not found',
+            });
+        }
+
+        if (question.deletedAt) {
+            await session.abortTransaction();
+            session.endSession();
+            return res.status(400).json({
+                success: false,
+                message: 'Topic is already deleted',
+            });
+        }
+
+        question.deletedAt = true;
+        await question.save({ session });
+
+        await session.commitTransaction();
+        session.endSession();
+
+        return res.status(200).json({
+            success: true,
+            message: 'Question was deleted successfully',
+        });
+    } catch (error) {
+        await session.abortTransaction();
+        session.endSession();
+        console.error(`Error in deleteTopic controller: ${error}`);
+        return res.status(500).json({
+            success: false,
+            message: 'Internal server error',
+        });
+    }
+}
+
+module.exports = { addQuestion, editQuestion, deleteQuestion };

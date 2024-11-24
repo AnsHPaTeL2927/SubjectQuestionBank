@@ -9,7 +9,7 @@ router.route("/:examId/subjects/:subjectId/topics/:topicId/add-question").post(a
 
 router.route("/:examId/subjects/:subjectId/topics/:topicId/questions/:questionId").put(authenticate, questionController.editQuestion)
 
-// router.route("/:examId/subjects/:subjectId/topics/:topicId").delete(authenticate, topicController.deleteTopic)
+router.route("/:examId/subjects/:subjectId/topics/:topicId/questions/:questionId").delete(authenticate, questionController.deleteQuestion)
 
 // router.route("/:examId/subjects/:subjectId/topics").get(authenticate, topicController.allTopics)
 
