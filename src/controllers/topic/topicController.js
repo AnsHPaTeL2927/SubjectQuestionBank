@@ -46,6 +46,13 @@ const addTopic = async(req, res) => {
             })
             await newTopic.save({ session });
 
+            const newLink = new SubjectTopicMapping({
+                subject_id: subjectId,
+                topic_id: newTopic._id,
+                is_active: true
+            });
+            await newLink.save({ session });
+
             addTopic.push(newTopic)
         }
 
