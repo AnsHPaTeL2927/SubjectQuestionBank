@@ -314,4 +314,40 @@ const getSubjectDetails = async(req, res) => {
     }
 }
 
-module.exports = { allExams, fetchLinkedSubjectsByExamId, fetchLinkedTopicsBySubjectId, fetchQuestionsByTopicId, getExamDetails, getSubjectDetails }
+const getTopicDetail = async(req, res) => {
+    const { topicId } = req.params
+    try {
+        const topic = await Topic.findById(topicId);
+
+        if (!topic) {
+            return res.status(404).json({
+                success: false,
+                message: 'Topic not found'
+            });
+        }
+
+        const questions = await Question.find({
+            topic_id: topicId,
+            hidden: false,
+            deletedAt: false
+        })
+
+        res.status(200).json({
+            success: true,
+            message: 'Subject details fetched successfully',
+            data: {
+                topic,
+                questions
+            }
+        });
+        
+    } catch (error) {
+        console.error(`Error in getTopicDetail controller: ${error}`);
+        return res.status(500).json({
+            success: false,
+            message: "Internal server error",
+        });
+    }
+}
+
+module.exports = { allExams, fetchLinkedSubjectsByExamId, fetchLinkedTopicsBySubjectId, fetchQuestionsByTopicId, getExamDetails, getSubjectDetails, getTopicDetail }
