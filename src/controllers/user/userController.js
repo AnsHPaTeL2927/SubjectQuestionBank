@@ -267,4 +267,51 @@ const getExamDetails = async (req, res) => {
     }
 };
 
-module.exports = { allExams, fetchLinkedSubjectsByExamId, fetchLinkedTopicsBySubjectId, fetchQuestionsByTopicId, getExamDetails }
+const getSubjectDetails = async(req, res) => {
+    const { subjectId } = req.params;
+
+    try {
+        // Fetch subject by ID
+        const subject = await Subject.findById(subjectId);
+
+        if (!subject) {
+            return res.status(404).json({
+                success: false,
+                message: 'Subject not found'
+            });
+        }
+
+        // Step 3: Fetch linked subjects
+        const topicLinks = await SubjectTopicMapping.find({
+            subject_id: subjectId,
+            is_active: true,
+            deletedAt: false,
+        });
+
+        const topicIds = topicLinks.map((link) => link.topic_id);
+
+        const topics = await Topic.find({
+            _id: { $in: topicIds },
+            hidden: false,
+            deletedAt: false,
+        });
+       
+        // Send response
+        res.status(200).json({
+            success: true,
+            message: 'Subject details fetched successfully',
+            data: {
+                subject,
+                topics
+            }
+        });
+    } catch (error) {
+        console.error(`Error in getExamDetails controller: ${error}`);
+        return res.status(500).json({
+            success: false,
+            message: "Internal server error",
+        });
+    }
+}
+
+module.exports = { allExams, fetchLinkedSubjectsByExamId, fetchLinkedTopicsBySubjectId, fetchQuestionsByTopicId, getExamDetails, getSubjectDetails }

@@ -12,4 +12,6 @@ router.route("/exams/:examId/subjects/:subjectId/topics/:topicId/questions").get
 
 router.route("/exams/:examId").get(userController.getExamDetails)
 
+router.route("/subjects/:subjectId").get(userController.getSubjectDetails)
+
 module.exports = router;
