@@ -4,6 +4,7 @@ const Subject = require("../../models/subjectModel")
 const Topic = require("../../models/topicModel")
 const SubjectTopicMapping = require("../../models/subjectTopicMappingModel");
 const Question = require('../../models/questionModel');
+const { response } = require('express');
 
 const addTopic = async(req, res) => {
     const session = await mongoose.startSession();
@@ -68,10 +69,10 @@ const addTopic = async(req, res) => {
     } catch (error) {
         await session.abortTransaction();
         session.endSession();
-        console.log(`Error from add Topic controller: ${error}`)
         res.status(500).json({
             success: false,
-            message: "Server Error"
+            message: "Server Error",
+            response: error
         })
     }
 }
@@ -149,6 +150,7 @@ const subjectTopicsLink = async (req, res) => {
         return res.status(500).json({
             success: false,
             message: 'Internal server error',
+            response: error
         });
     }
 }
@@ -194,6 +196,7 @@ const editTopic = async (req, res) => {
         return res.status(500).json({
             success: false,
             message: 'Internal server error',
+            response: error
         });
     }
 }
@@ -245,10 +248,10 @@ const deleteTopic = async (req, res) => {
     } catch (error) {
         await session.abortTransaction();
         session.endSession();
-        console.error(`Error in deleteTopic controller: ${error}`);
         return res.status(500).json({
             success: false,
             message: 'Internal server error',
+            response: error
         });
     }
 }
@@ -301,7 +304,8 @@ const allTopics = async (req, res) => {
     } catch (error) {
         return res.status(500).json({
             success: false,
-            message: "Server Error"
+            message: "Server Error",
+            response: error
         })
     }
 }
@@ -334,10 +338,10 @@ const getTopicDetails = async(req, res) => {
             }
         });
     } catch (error) {
-        console.error(`Error in getTopicDetail controller: ${error}`);
         return res.status(500).json({
             success: false,
             message: "Internal server error",
+            response: error
         });
     }
 }
