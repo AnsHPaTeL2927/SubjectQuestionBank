@@ -78,10 +78,10 @@ const addSubject = async (req, res) => {
     } catch (error) {
         await session.abortTransaction();
         session.endSession();
-        console.log(`Error from add subject controller: ${error}`)
         res.status(500).json({
             success: false,
-            message: "Server Error"
+            message: "Server Error",
+            response: error
         })
     }
 }
@@ -156,10 +156,10 @@ const examSubjectsLink = async (req, res) => {
     } catch (error) {
         await session.abortTransaction();
         session.endSession();
-        console.error(`Error in examSubjectsLink controller: ${error}`);
         return res.status(500).json({
             success: false,
             message: 'Internal server error',
+            response: error
         });
     }
 }
@@ -203,10 +203,10 @@ const allSubject = async (req, res) => {
             response: subjects
         })
     } catch (error) {
-        console.log(`Error found from addsubject in Subject controller: ${error}`)
         return res.status(500).json({
             success: false,
-            message: "Server Error"
+            message: "Server Error",
+            response: error
         })
     }
 }
@@ -252,6 +252,7 @@ const editSubject = async (req, res) => {
         return res.status(500).json({
             success: false,
             message: 'Internal server error',
+            response: error
         });
     }
 }
@@ -290,6 +291,7 @@ const deleteSubject = async (req, res) => {
         return res.status(500).json({
             success: false,
             message: 'Internal server error',
+            response: error
         });
     }
 }
@@ -334,6 +336,7 @@ const getSubjectDetails = async(req, res) => {
         return res.status(500).json({
             success: false,
             message: "Internal server error",
+            response: error
         });
     }
 }
