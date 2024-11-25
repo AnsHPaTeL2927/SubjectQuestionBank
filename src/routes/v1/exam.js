@@ -13,4 +13,6 @@ router.route("/").get(authenticate, examController.allExam);
 
 router.route("/:examId/delete").delete(authenticate, examController.deleteExam)
 
+router.route("/:examId").get(authenticate, examController.getExamDetails)
+
 module.exports = router
