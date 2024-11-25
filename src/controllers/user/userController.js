@@ -1,79 +1,57 @@
-const Exam = require('../../models/examModel')
-const sendResponse = require('../../utils/responseHandler')
-const ExamSubjectMapping = require("../../models/examSubjectMappingModel")
-const Topic = require("../../models/topicModel")
-const SubjectTopicMapping = require("../../models/subjectTopicMappingModel")
-const Subject = require("../../models/subjectModel")
-const Question = require("../../models/questionModel")
+const Exam = require('../../models/examModel');
+const sendResponse = require('../../utils/responseHandler');
+const ExamSubjectMapping = require("../../models/examSubjectMappingModel");
+const Topic = require("../../models/topicModel");
+const SubjectTopicMapping = require("../../models/subjectTopicMappingModel");
+const Subject = require("../../models/subjectModel");
+const Question = require("../../models/questionModel");
+
 const allExams = async (req, res) => {
     try {
         const exams = await Exam.where('hidden').equals(false).find();
 
-        if(!exams.length) {
-            return sendResponse(res, false, 'Exams Not Found', null, 422)
+        if (!exams.length) {
+            return sendResponse(res, false, 'Exams Not Found', null, 422);
         }
 
-        return sendResponse(res, true, 'Exams fetched successfully', exams, 200)
+        return sendResponse(res, true, 'Exams fetched successfully', exams, 200);
     } catch (error) {
-        return sendResponse(res, false, 'Internal Server Error', error, 500)
+        return sendResponse(res, false, 'Internal Server Error', error, 500);
     }
-}
+};
 
 const fetchLinkedSubjectsByExamId = async (req, res) => {
     try {
         const { examId } = req.params;
 
-        // Validate examId
         if (!examId) {
-            return res.status(400).json({
-                success: false,
-                message: 'Exam ID is required',
-            });
+            return sendResponse(res, false, 'Exam ID is required', null, 422);
         }
 
-        // Step 1: Find active links between the exam and subjects
         const activeLinks = await ExamSubjectMapping.find({
             exam_id: examId,
             is_active: true,
             deletedAt: false,
         });
 
-        if (!activeLinks || activeLinks.length === 0) {
-            return res.status(404).json({
-                success: false,
-                message: 'No subjects linked to the given exam',
-            });
+        if (!activeLinks.length) {
+            return sendResponse(res, false, 'No subjects linked to given exam', null, 422);
         }
 
-        // Extract subject IDs from the active links
         const subjectIds = activeLinks.map(link => link.subject_id);
-
-        // Step 2: Fetch subjects based on the extracted IDs
         const subjects = await Subject.find({
             _id: { $in: subjectIds },
             hidden: false,
             deletedAt: false,
         });
 
-        if (!subjects || subjects.length === 0) {
-            return res.status(404).json({
-                success: false,
-                message: 'No subjects found for the given exam',
-            });
+        if (!subjects.length) {
+            return sendResponse(res, false, 'No subjects found for the given exam', null, 404);
         }
 
-        // Return the filtered subjects
-        return res.status(200).json({
-            success: true,
-            message: 'Subjects fetched successfully',
-            data: subjects,
-        });
+        return sendResponse(res, true, 'Subjects fetched successfully', subjects, 200);
     } catch (error) {
-        console.error(`Error in fetchLinkedSubjectsByExamId controller: ${error}`);
-        return res.status(500).json({
-            success: false,
-            message: 'Internal server error',
-        });
+        return sendResponse(res, false, 'Internal Server Error', error, 500);
     }
 };
 
@@ -81,111 +59,87 @@ const fetchLinkedTopicsBySubjectId = async (req, res) => {
     try {
         const { subjectId } = req.params;
 
-        // Validate subjectId
         if (!subjectId) {
-            return res.status(400).json({
-                success: false,
-                message: 'Subject ID is required',
-            });
+            return sendResponse(res, false, 'Subject ID is required', null, 400);
         }
 
-        // Step 1: Find active links between the subject and topics
         const activeLinks = await SubjectTopicMapping.find({
             subject_id: subjectId,
             is_active: true,
             deletedAt: false,
         });
 
-
-        if (!activeLinks || activeLinks.length === 0) {
-            return res.status(404).json({
-                success: false,
-                message: 'No topics linked to the given subject',
-            });
+        if (!activeLinks.length) {
+            return sendResponse(res, false, 'No topics linked to the given subject', null, 404);
         }
 
-        // Extract topic IDs from the active links
         const topicIds = activeLinks.map(link => link.topic_id);
-
-        // Step 2: Fetch topics based on the extracted IDs
         const topics = await Topic.find({
             _id: { $in: topicIds },
             hidden: false,
             deletedAt: false,
         });
 
-        if (!topics || topics.length === 0) {
-            return res.status(404).json({
-                success: false,
-                message: 'No visible topics found for the given subject',
-            });
+        if (!topics.length) {
+            return sendResponse(res, false, 'No visible topics found for the given subject', null, 404);
         }
 
-        // Return the filtered topics
-        return res.status(200).json({
-            success: true,
-            message: 'Topics fetched successfully',
-            data: topics,
-        });
+        return sendResponse(res, true, 'Topics fetched successfully', topics, 200);
     } catch (error) {
-        console.error(`Error in allTopics controller: ${error}`);
-        return res.status(500).json({
-            success: false,
-            message: 'Internal server error',
-        });
+        return sendResponse(res, false, 'Internal Server Error', error, 500);
     }
 };
 
 const fetchQuestionsByTopicId = async (req, res) => {
     try {
-        const { examId, subjectId, topicId } = req.params; // Assuming they are passed as query parameters
+        const { examId, subjectId, topicId } = req.params;
 
-        // Step 1: Validate required parameters
         if (!examId || !subjectId || !topicId) {
-            return res.status(400).json({
-                success: false,
-                message: !examId ? "examId is requied" : !subjectId ? "subjectId is required" : "topicId is required",
-            });
+            return sendResponse(
+                res,
+                false,
+                !examId
+                    ? 'examId is required'
+                    : !subjectId
+                        ? 'subjectId is required'
+                        : 'topicId is required',
+                null,
+                400
+            );
         }
 
-        // Step 2: Validate if examId exists
         const exam = await Exam.findById(examId);
         const subject = await Subject.findById(subjectId);
         const topic = await Topic.findById(topicId);
 
         if (!exam || !subject || !topic) {
-            return res.status(400).json({
-                success: false,
-                message: !exam ? "Exam not found" : !subject ? "Subject not found" : "Topic not found"
-            });
+            return sendResponse(
+                res,
+                false,
+                !exam
+                    ? 'Exam not found'
+                    : !subject
+                        ? 'Subject not found'
+                        : 'Topic not found',
+                null,
+                400
+            );
         }
 
-        // Step 5: Fetch questions linked to the given topicId
         const questions = await Question.find({
-            topic_id: topicId, // Assuming `topic_id` is stored in the `questions` collection
+            topic_id: topicId,
             hidden: false,
             deletedAt: false,
         });
 
-        if (!questions || questions.length === 0) {
-            return res.status(404).json({
-                success: false,
-                message: "No questions found for the given topic",
-            });
+        if (!questions.length) {
+            return sendResponse(res, false, 'No questions found for the given topic', null, 404);
         }
 
-        // Step 6: Return the fetched questions
-        return res.status(200).json({
-            success: true,
-            message: "Questions fetched successfully",
-            data: questions,
-        });
+        return sendResponse(res, true, 'Questions fetched successfully', questions, 200);
     } catch (error) {
         console.error(`Error in fetchQuestionsByTopicId controller: ${error}`);
-        return res.status(500).json({
-            success: false,
-            message: "Internal server error",
-        });
+        return sendResponse(res, false, 'Internal Server Error', error, 500);
     }
 };
 
@@ -193,49 +147,37 @@ const getExamDetails = async (req, res) => {
     try {
         const { examId } = req.params;
 
-        // Step 1: Validate if examId is provided
         if (!examId) {
-            return res.status(400).json({
-                success: false,
-                message: "Exam ID is required",
-            });
+            return sendResponse(res, false, 'Exam ID is required', null, 400);
         }
 
-        // Step 2: Fetch exam details
         const exam = await Exam.findById(examId);
         if (!exam) {
-            return res.status(404).json({
-                success: false,
-                message: "Exam not found",
-            });
+            return sendResponse(res, false, 'Exam not found', null, 404);
         }
 
-        // Step 3: Fetch linked subjects
         const subjectLinks = await ExamSubjectMapping.find({
             exam_id: examId,
             is_active: true,
             deletedAt: false,
         });
 
-        const subjectIds = subjectLinks.map((link) => link.subject_id);
-
+        const subjectIds = subjectLinks.map(link => link.subject_id);
         const subjects = await Subject.find({
             _id: { $in: subjectIds },
             hidden: false,
             deletedAt: false,
         });
 
-        // Step 4: Fetch topics for each subject
         const subjectWithTopics = await Promise.all(
-            subjects.map(async (subject) => {
+            subjects.map(async subject => {
                 const topicLinks = await SubjectTopicMapping.find({
                     subject_id: subject._id,
                     is_active: true,
                     deletedAt: false,
                 });
 
-                const topicIds = topicLinks.map((link) => link.topic_id);
-
+                const topicIds = topicLinks.map(link => link.topic_id);
                 const topics = await Topic.find({
                     _id: { $in: topicIds },
                     hidden: false,
@@ -249,39 +191,22 @@ const getExamDetails = async (req, res) => {
             })
         );
 
-        // Step 5: Return response
-        return res.status(200).json({
-            success: true,
-            message: "Exam details fetched successfully",
-            data: {
-                exam,
-                subjects: subjectWithTopics,
-            },
-        });
+        return sendResponse(res, true, 'Exam details fetched successfully', { exam, subjects: subjectWithTopics }, 200);
     } catch (error) {
-        console.error(`Error in getExamDetails controller: ${error}`);
-        return res.status(500).json({
-            success: false,
-            message: "Internal server error",
-        });
+        return sendResponse(res, false, 'Internal Server Error', error, 500);
     }
 };
 
-const getSubjectDetails = async(req, res) => {
-    const { subjectId } = req.params;
-
+const getSubjectDetails = async (req, res) => {
     try {
-        // Fetch subject by ID
+        const { subjectId } = req.params;
+
         const subject = await Subject.findById(subjectId);
 
         if (!subject) {
-            return res.status(404).json({
-                success: false,
-                message: 'Subject not found'
-            });
+            return sendResponse(res, false, 'Subject not found', null, 404);
         }
 
-        // Step 3: Fetch linked subjects
         const topicLinks = await SubjectTopicMapping.find({
             subject_id: subjectId,
             is_active: true,
@@ -295,59 +220,42 @@ const getSubjectDetails = async(req, res) => {
             hidden: false,
             deletedAt: false,
         });
-       
-        // Send response
-        return res.status(200).json({
-            success: true,
-            message: 'Subject details fetched successfully',
-            data: {
-                subject,
-                topics
-            }
-        });
-    } catch (error) {
-        console.error(`Error in getExamDetails controller: ${error}`);
-        return res.status(500).json({
-            success: false,
-            message: "Internal server error",
-        });
-    }
-}
 
-const getTopicDetail = async(req, res) => {
-    const { topicId } = req.params
+        return sendResponse(res, true, 'Subject details fetched successfully', { subject, topics }, 200);
+    } catch (error) {
+        return sendResponse(res, false, 'Internal Server Error', error, 500);
+    }
+};
+
+const getTopicDetail = async (req, res) => {
     try {
+        const { topicId } = req.params;
+
         const topic = await Topic.findById(topicId);
 
         if (!topic) {
-            return res.status(404).json({
-                success: false,
-                message: 'Topic not found'
-            });
+            return sendResponse(res, false, 'Topic not found', null, 404);
         }
 
         const questions = await Question.find({
             topic_id: topicId,
             hidden: false,
-            deletedAt: false
-        })
-
-        return res.status(200).json({
-            success: true,
-            message: 'Topic details fetched successfully',
-            data: {
-                topic,
-                questions
-            }
+            deletedAt: false,
         });
-        
+
+        return sendResponse(res, true, 'Topic details fetched successfully', { topic, questions }, 200);
     } catch (error) {
         console.error(`Error in getTopicDetail controller: ${error}`);
-        return res.status(500).json({
-            success: false,
-            message: "Internal server error",
-        });
+        return sendResponse(res, false, 'Internal Server Error', error, 500);
     }
-}
+};
 
-module.exports = { allExams, fetchLinkedSubjectsByExamId, fetchLinkedTopicsBySubjectId, fetchQuestionsByTopicId, getExamDetails, getSubjectDetails, getTopicDetail }
+module.exports = {
+    allExams,
+    fetchLinkedSubjectsByExamId,
+    fetchLinkedTopicsBySubjectId,
+    fetchQuestionsByTopicId,
+    getExamDetails,
+    getSubjectDetails,
+    getTopicDetail,
+};
