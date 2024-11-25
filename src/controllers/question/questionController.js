@@ -213,4 +213,39 @@ const allQuestions = async(req, res) => {
     }
 }
 
-module.exports = { addQuestion, editQuestion, deleteQuestion, allQuestions };
+const getQuestionDetails = async(req, res) => {
+    const { examId, subjectId, topicId, questionId } = req.params
+
+    try {
+        const exam = await Exam.findById(examId)
+        const subject = await Subject.findById(subjectId)
+        const topic = await Topic.findById(topicId)
+        if (!exam || !subject || !topic) {
+            return res.status(404).json({
+                success: false,
+                message: !exam ? "Exam Not Found" : !subject ? 'Subject not found' : "Topic Not Found"
+            });
+        }
+
+        const question = await Question.find({
+            _id: questionId,
+            deletedAt: false
+        })
+
+        return res.status(200).json({
+            success: true,
+            message: 'Question details fetched successfully',
+            data: {
+                question
+            }
+        });
+    } catch (error) {
+        console.error(`Error in getQuestionDetails controller: ${error}`);
+        return res.status(500).json({
+            success: false,
+            message: "Internal server error",
+        });
+    }
+}
+
+module.exports = { addQuestion, editQuestion, deleteQuestion, allQuestions, getQuestionDetails };

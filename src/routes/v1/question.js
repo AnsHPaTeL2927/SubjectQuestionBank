@@ -13,4 +13,6 @@ router.route("/:examId/subjects/:subjectId/topics/:topicId/questions/:questionId
 
 router.route("/:examId/subjects/:subjectId/topics/:topicId/questions").get(authenticate, questionController.allQuestions)
 
+router.route("/:examId/subjects/:subjectId/topics/:topicId/questions/:questionId").get(authenticate, questionController.getQuestionDetails)
+
 module.exports = router
