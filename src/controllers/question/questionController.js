@@ -5,6 +5,7 @@ const Topic = require("../../models/topicModel")
 const Question = require("../../models/questionModel")
 const ExamSubjectMapping = require("../../models/examSubjectMappingModel");
 const SubjectTopicMapping = require("../../models/subjectTopicMappingModel");
+const { response } = require('express');
 
 const addQuestion = async (req, res) => {
     const session = await mongoose.startSession();
@@ -68,10 +69,10 @@ const addQuestion = async (req, res) => {
     } catch (error) {
         await session.abortTransaction();
         session.endSession();
-        console.error(`Error from add Question controller: ${error}`);
         res.status(500).json({
             success: false,
-            message: "Server Error"
+            message: "Server Error",
+            response: error
         });
     }
 };
@@ -113,10 +114,10 @@ const editQuestion = async(req, res) => {
     } catch (error) {
         await session.abortTransaction();
         session.endSession();
-        console.log(`Error from editQuestion controller: ${error}`);
         return res.status(500).json({
             success: false,
             message: 'Internal server error',
+            response: error
         });
     }
 }
@@ -142,7 +143,7 @@ const deleteQuestion = async(req, res) => {
         if (question.deletedAt) {
             await session.abortTransaction();
             session.endSession();
-            return res.status(400).json({
+            return res.status(422).json({
                 success: false,
                 message: 'Topic is already deleted',
             });
@@ -161,10 +162,10 @@ const deleteQuestion = async(req, res) => {
     } catch (error) {
         await session.abortTransaction();
         session.endSession();
-        console.error(`Error in deleteTopic controller: ${error}`);
         return res.status(500).json({
             success: false,
             message: 'Internal server error',
+            response: error
         });
     }
 }
@@ -209,6 +210,7 @@ const allQuestions = async(req, res) => {
         return res.status(500).json({
             success: false,
             message: 'Internal server error',
+            response: error
         });
     }
 }
@@ -240,10 +242,10 @@ const getQuestionDetails = async(req, res) => {
             }
         });
     } catch (error) {
-        console.error(`Error in getQuestionDetails controller: ${error}`);
         return res.status(500).json({
             success: false,
             message: "Internal server error",
+            response: error
         });
     }
 }
