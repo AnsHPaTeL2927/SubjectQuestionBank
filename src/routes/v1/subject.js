@@ -15,6 +15,7 @@ router.route("/:examId/subjects").post(authenticate, subjectController.examSubje
 
 router.route("/:examId/subjects/:subjectId").delete(authenticate, subjectController.deleteSubject)
 
+router.route("/:examId/subjects/:subjectId").get(authenticate, subjectController.getSubjectDetails)
 
 //user route
 // router.route("/:examId/subjects").get(subjectController.allSubject);

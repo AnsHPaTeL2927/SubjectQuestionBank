@@ -163,7 +163,6 @@ const getExamDetails = async(req, res) => {
         // Step 3: Fetch linked subjects
         const subjectLinks = await ExamSubjectMapping.find({
             exam_id: examId,
-            is_active: true,
             deletedAt: false,
         });
 
@@ -171,7 +170,6 @@ const getExamDetails = async(req, res) => {
 
         const subjects = await Subject.find({
             _id: { $in: subjectIds },
-            hidden: false,
             deletedAt: false,
         });
 
@@ -180,7 +178,6 @@ const getExamDetails = async(req, res) => {
             subjects.map(async (subject) => {
                 const topicLinks = await SubjectTopicMapping.find({
                     subject_id: subject._id,
-                    is_active: true,
                     deletedAt: false,
                 });
 
@@ -188,7 +185,6 @@ const getExamDetails = async(req, res) => {
 
                 const topics = await Topic.find({
                     _id: { $in: topicIds },
-                    hidden: false,
                     deletedAt: false,
                 });
 

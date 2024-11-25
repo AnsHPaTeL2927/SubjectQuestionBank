@@ -2,6 +2,8 @@ const mongoose = require('mongoose');
 const Exam = require("../../models/examModel")
 const Subject = require("../../models/subjectModel")
 const ExamSubjectMapping = require("../../models/examSubjectMappingModel");
+const SubjectTopicMapping = require("../../models/subjectTopicMappingModel")
+const Topic = require("../../models/topicModel")
 
 //default and testing route
 const subjectController = async (req, res) => {
@@ -292,4 +294,48 @@ const deleteSubject = async (req, res) => {
     }
 }
 
-module.exports = { subjectController, addSubject, allSubject, examSubjectsLink, editSubject, deleteSubject }
+const getSubjectDetails = async(req, res) => {
+    const { examId, subjectId } = req.params
+
+    try {
+        const exam = await Exam.findById(examId)
+        const subject = await Subject.findById(subjectId)
+        if (!exam || !subject) {
+            return res.status(404).json({
+                success: false,
+                message: !exam ? "Exam Not Found" : 'Subject not found'
+            });
+        }
+
+        const topicLinks = await SubjectTopicMapping.find({
+            subject_id: subjectId,
+            deletedAt: false,
+        });
+
+        const topicIds = topicLinks.map((link) => link.topic_id);
+
+        const topics = await Topic.find({
+            _id: { $in: topicIds },
+            deletedAt: false,
+        });
+
+        // Send response
+        return res.status(200).json({
+            success: true,
+            message: 'Subject details fetched successfully',
+            data: {
+                subject,
+                topics
+            }
+        });
+
+    } catch (error) {
+        console.error(`Error in getSubjectDetails controller: ${error}`);
+        return res.status(500).json({
+            success: false,
+            message: "Internal server error",
+        });
+    }
+}
+
+module.exports = { subjectController, addSubject, allSubject, examSubjectsLink, editSubject, deleteSubject, getSubjectDetails }

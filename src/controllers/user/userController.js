@@ -297,7 +297,7 @@ const getSubjectDetails = async(req, res) => {
         });
        
         // Send response
-        res.status(200).json({
+        return res.status(200).json({
             success: true,
             message: 'Subject details fetched successfully',
             data: {
