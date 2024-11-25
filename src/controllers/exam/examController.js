@@ -10,7 +10,6 @@ const examController = async (req, res) => {
 
 const addExam = async (req, res) => {
     try {
-        console.log("add exam", req.body)
         const { name, code, exam_code, description, marks, exam_type, mode } = req.body
 
         const examExist = await Exam.findOne({ name })
@@ -32,17 +31,17 @@ const addExam = async (req, res) => {
             mode
         })
 
-        res.status(200).json({
+        return res.status(200).json({
             success: true,
             message: "Add Exam Successfully",
             response: examCreated
         })
 
     } catch (error) {
-        console.log(`Error from add exam controller: ${error}`)
-        res.status(422).json({
+        return res.status(500).json({
             success: false,
-            message: "Server Error"
+            message: "Server Error",
+            response: error
         })
     }
 }
@@ -55,9 +54,9 @@ const editExam = async (req, res) => {
         const exam = await Exam.findById(examId)
 
         if (!exam) {
-            res.status(422).json({
-                'success': false,
-                'message': "Please Try Again!!"
+            return res.status(422).json({
+                success : false,
+                message : "Please Try Again!!"
             })
         }
         exam.name = name || exam.name;
@@ -72,17 +71,17 @@ const editExam = async (req, res) => {
 
         const updatedExam = await exam.save();
 
-        res.status(200).json({
+        return res.status(200).json({
             success: true,
             message: "Exam updated successfully",
             exam: updatedExam
         });
 
     } catch (error) {
-        console.log(`Error from edit exam controller: ${error}`)
-        res.status(422).json({
+        res.status(500).json({
             success: false,
-            message: "Server Error"
+            message: "Server Error",
+            response: error
         })
     }
 }
@@ -98,17 +97,17 @@ const allExam = async (req, res) => {
             })
         }
 
-        res.status(200).json({
+        return res.status(200).json({
             success: true,
             message: "Exams fetch successfully",
             response: exams
         })
 
     } catch (error) {
-        console.log(`Error from all exam fetch controller: ${error}`)
-        res.status(422).json({
+        res.status(500).json({
             success: false,
-            message: "Server Error"
+            message: "Server Error",
+            response: error
         })
     }
 }
@@ -120,7 +119,7 @@ const deleteExam = async(req, res) => {
         const exam = await Exam.findById(examId)
 
         if(!exam) {
-            res.status(404).json({
+            return res.status(404).json({
                 success: false,
                 message: "Exam not found"
             })
@@ -128,16 +127,16 @@ const deleteExam = async(req, res) => {
 
         await Exam.findByIdAndDelete(examId)
 
-        res.status(200).json({
+        return res.status(200).json({
             success: true,
             message: "Exam Deleted Successfully"
         });
 
     } catch (error) {
-        console.log(`Error from delete exam controller: ${error}`)
-        res.status(422).json({
+        res.status(500).json({
             success: false,
-            message: "Server Error"
+            message: "Server Error",
+            response: error
         })
     }
 }
@@ -146,7 +145,7 @@ const getExamDetails = async(req, res) => {
     const { examId } = req.params
     try {
         if (!examId) {
-            return res.status(400).json({
+            return res.status(422).json({
                 success: false,
                 message: "Exam ID is required",
             });
@@ -205,10 +204,10 @@ const getExamDetails = async(req, res) => {
             },
         });
     } catch (error) {
-        console.error(`Error in getExamDetails controller: ${error}`);
         return res.status(500).json({
             success: false,
             message: "Internal server error",
+            response: error
         });
     }
 }
