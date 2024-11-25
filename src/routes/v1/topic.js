@@ -13,4 +13,6 @@ router.route("/:examId/subjects/:subjectId/topics/:topicId").delete(authenticate
 
 router.route("/:examId/subjects/:subjectId/topics").get(authenticate, topicController.allTopics)
 
+router.route("/:examId/subjects/:subjectId/topics/:topicId").get(authenticate, topicController.getTopicDetails)
+
 module.exports = router

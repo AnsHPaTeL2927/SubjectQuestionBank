@@ -3,6 +3,7 @@ const Exam = require("../../models/examModel")
 const Subject = require("../../models/subjectModel")
 const Topic = require("../../models/topicModel")
 const SubjectTopicMapping = require("../../models/subjectTopicMappingModel");
+const Question = require('../../models/questionModel');
 
 const addTopic = async(req, res) => {
     const session = await mongoose.startSession();
@@ -305,4 +306,40 @@ const allTopics = async (req, res) => {
     }
 }
 
-module.exports = { addTopic, subjectTopicsLink, editTopic, deleteTopic, allTopics }
+const getTopicDetails = async(req, res) => {
+    const { examId, subjectId, topicId } = req.params
+
+    try {
+        const exam = await Exam.findById(examId)
+        const subject = await Subject.findById(subjectId)
+        const topic = await Topic.findById(topicId)
+        if (!exam || !subject || !topic) {
+            return res.status(404).json({
+                success: false,
+                message: !exam ? "Exam Not Found" : !subject ? 'Subject not found' : "Topic Not Found"
+            });
+        }
+
+        const questions = await Question.find({
+            topic_id: topicId,
+            deletedAt: false
+        })
+
+        return res.status(200).json({
+            success: true,
+            message: 'Topic details fetched successfully',
+            data: {
+                topic,
+                questions
+            }
+        });
+    } catch (error) {
+        console.error(`Error in getTopicDetail controller: ${error}`);
+        return res.status(500).json({
+            success: false,
+            message: "Internal server error",
+        });
+    }
+}
+
+module.exports = { addTopic, subjectTopicsLink, editTopic, deleteTopic, allTopics, getTopicDetails }

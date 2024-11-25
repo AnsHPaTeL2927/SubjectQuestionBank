@@ -332,9 +332,9 @@ const getTopicDetail = async(req, res) => {
             deletedAt: false
         })
 
-        res.status(200).json({
+        return res.status(200).json({
             success: true,
-            message: 'Subject details fetched successfully',
+            message: 'Topic details fetched successfully',
             data: {
                 topic,
                 questions
