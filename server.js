@@ -2,9 +2,11 @@ require("dotenv").config()
 const express = require("express")
 const app = express()
 const cors = require("cors")
+const http = require('http');
+const ngrok = require('@ngrok/ngrok');
 
 const corsOptions = {
-    origin: "http://localhost:5173",
+    origin: ["http://localhost:5173",  /\.ngrok\.app$/],
     methods: "GET, POST, HEAD, PUT, DELETE, PATCH",
     Credential: true
 }
@@ -30,15 +32,27 @@ app.get("/", (req, res) => {
 app.use('/api/v1', routes)
 
 app.use(errorMiddleware)
+const server = http.createServer(app);
 
 const start = async() => {
     try {
         await connectDB(process.env.MONGODB_URL)
-        app.listen(PORT, () => {
-            console.log(`${PORT} Yes I am Connected!!`)
-        })
+        
+        // Start the server
+        server.listen(PORT, () => {
+            console.log(`Server running on port ${PORT}`)
+        });
+        
+        // Connect Ngrok
+        const listener = await ngrok.connect({ 
+            addr: PORT, 
+            authtoken_from_env: true,
+        });
+
+        console.log(`Ngrok Tunnel Created: ${listener.url()}`)
+        console.log(`Your routes are now accessible at: ${listener.url()}/api/v1/`)
     } catch (error) {
-        console.log(`Error From Server.js in Starrt Function: ${error}`)
+        console.error(`Error in server startup: ${error}`)
     }
 }
 
