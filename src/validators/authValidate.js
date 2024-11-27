@@ -10,7 +10,6 @@ const loginSchema = z.object({
         .max(255, { message: "Email must not be more than 255 characters." }),
     password: z
         .string({ required_error: "Password is required" })
-        .min(7, { message: "Password must be at least of 6 characters." })
         .max(1024, { message: "Password must not be more than 1024 characters." }),
 })
 
