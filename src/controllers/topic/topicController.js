@@ -39,7 +39,7 @@ const addTopic = async(req, res) => {
                 session.endSession();
                 return res.status(422).json({
                     success: false,
-                    message: "Subject is already created"
+                    message: "Topic is already created"
                 })
             }
             
