@@ -232,7 +232,7 @@ const deleteTopic = async (req, res) => {
         await topic.save({ session });
 
         // Soft delete all links between this topic and its subjects
-        await TopicSubjectMapping.updateMany(
+        await SubjectTopicMapping.updateMany(
             { topic_id: topicId, deletedAt: false },
             { deletedAt: true },
             { session }
@@ -243,7 +243,7 @@ const deleteTopic = async (req, res) => {
 
         return res.status(200).json({
             success: true,
-            message: 'Topic and associated links successfully deleted',
+            message: 'Topic successfully deleted',
         });
     } catch (error) {
         await session.abortTransaction();
